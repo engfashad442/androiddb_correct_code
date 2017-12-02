@@ -1,0 +1,244 @@
+/*Custom database in android t*/
+package com.example.shuaibfawole.databasetest;
+import android.content.Context;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteOpenHelper;
+import android.util.Log;
+import android.widget.Toast;
+
+/**
+ * Created by shuaib.fawole on 11/10/2017.
+ */
+//This is the class the manages the our database
+public class DataManager {
+    //This is the class that represent the actual database
+    private SQLiteDatabase db;
+    //Declaring the columns for our db
+    private static final String DB_NAME ="address_book";
+    private  static  final int DB_VERSION = 1;
+    private static  final String TABLE_N_AND_A ="names_and_address";
+
+    //Declaring the columns for our table TABLE_N_AND_A :note that the columns are public so that they
+    // can be accessed outside the class but they are final and static . meaning they cannot be alter by the users
+    public static final String TABLE_ROW_ID ="_id";
+    public  static  final String TABLE_ROW_NAME ="name";
+    public  static  final  String TABLE_ROW_AGE = "age";
+    //creating constructor that takes as the arguemnet and our custom helper class is initiated here
+    public  DataManager(Context context){
+        //calling the constructor of the custom helper class which take one parameter
+       CustomSQLiteOpenHelper helper = new CustomSQLiteOpenHelper(context);
+         db = helper.getWritableDatabase();
+    }
+    //Creating an insert method that takes two parameter which are name and age
+    public  void  insert(String name , String age){
+                 String query =
+                "INSERT INTO  "
+                        + TABLE_N_AND_A
+                        + "( "
+                        + TABLE_ROW_NAME
+                        + ","
+                        + TABLE_ROW_AGE
+                        + " ) "
+                        +  " VALUES ( "
+                        + "'"
+                        + name
+                        +  "'"
+                        + ","
+                        + "'"
+                        + age
+                        + "'"
+                        +" );";
+               Log.i("insert() =" ,query ); //Log the process in to the logcat window
+              //Execute the query string above by calling the method execSQL() on SQLiteDatabase object
+                db.execSQL(query);
+    }
+     //creating a method call delete to delete record  base on the name passed in to the delete field
+    public  void delete(String name){
+                String query =
+                "DELETE FROM  "
+                        + TABLE_N_AND_A
+                        + "  WHERE "
+                        + TABLE_ROW_NAME
+                        + " = "
+                        + "'"
+                        + name
+                        + "';";
+                 Log.i("delete() =" , query);
+               //calling execSQL method from the SQLiteDatabase object which takes query as the paramter
+               db.execSQL(query);
+    }
+   //creating fetchAll() that retrieves all the records from the database
+     public Cursor fetchAll() {
+             String query =
+                     " SELECT * FROM  "
+                             + TABLE_N_AND_A;
+            Cursor c =  db.rawQuery(query,null); // This returns cursor as the return type which is similar to cursor in plsql and Tsql
+             return  c;
+
+     }
+     //Creating a method that returns result base on the name input by the user
+    public Cursor searchName(String name ){
+        String query =
+                "SELECT "
+                        + TABLE_ROW_ID
+                        + ","
+                        + TABLE_ROW_NAME
+                        + ","
+                        + TABLE_ROW_AGE
+                        + " FROM "
+                        +  TABLE_N_AND_A
+                        + " WHERE "
+                        + TABLE_ROW_NAME
+                        + " = "
+                        + "'"
+                        + name
+                        + "';";
+        Log.i("searchName()",query);
+                         Cursor c =  db.rawQuery(query,null);
+                         return c;
+
+    }
+    //Creating the custom class call above
+    private class CustomSQLiteOpenHelper extends SQLiteOpenHelper{
+        public CustomSQLiteOpenHelper(Context context) {
+            super(context,DB_NAME,null,DB_VERSION);
+        }
+
+       //This method  run ones , which is used to create the db  and the table itself
+        @Override
+        public void onCreate(SQLiteDatabase db) {
+            String query = "CREATE TABLE  "
+                    + TABLE_N_AND_A + " ("
+                    + TABLE_ROW_ID
+                    + "  integer primary key autoincrement not null,"
+                    + TABLE_ROW_NAME
+                    + "  text not null,"
+                    + TABLE_ROW_AGE
+                    + " text not null);";
+                     db.execSQL(query); //execute the query
+        }
+
+        @Override
+        public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
+
+        }
+
+
+    }
+}
+----------------------------------------------------------------------------------------------------------------------------------------------------
+//ManinActivity class for the project   
+
+
+package com.example.shuaibfawole.databasetest;
+
+import android.database.Cursor;
+import android.os.Bundle;
+import android.support.design.widget.FloatingActionButton;
+import android.support.design.widget.Snackbar;
+import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.Toolbar;
+import android.util.Log;
+import android.view.View;
+import android.view.Menu;
+import android.view.MenuItem;
+import android.widget.Button;
+import android.widget.EditText;
+
+//We implement view.OnclikListener interface hence, we implement onclick method
+public class MainActivity extends AppCompatActivity implements View.OnClickListener{
+    //Declaring variable for our widgets on the main activity layout
+      Button btnSelect;
+      Button  btnInsert;
+      Button  btnDelete;
+      Button  btnSearch;
+      DataManager dm;
+      EditText editName;
+      EditText editAge;
+      EditText  editDelete;
+      EditText  editSearch;
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
+        //Making reference to our widget eidttext
+          dm = new DataManager(this);
+         //Calling referenceAndListener() that contains all our reference widget
+        editName = (EditText) findViewById(R.id.editName);
+        editAge  = (EditText)findViewById(R.id.editAge) ;
+        editSearch = (EditText)findViewById(R.id.editSearch);
+        editDelete  = (EditText)findViewById(R.id.editDelete);
+        //Making reference to our button on the activity
+        btnDelete = (Button)findViewById(R.id.btnDelete) ;
+        btnInsert  = (Button)findViewById(R.id.btnInsert);
+        btnSelect  =(Button)findViewById(R.id.btnSelect);
+        btnSearch  = (Button)findViewById(R.id.btnSearch);
+
+        // Adding listener to the group of the buttons. This is possible because we have add listener to the mainactivity
+        btnSearch.setOnClickListener(this);
+        btnSelect.setOnClickListener(this);
+        btnInsert.setOnClickListener(this);
+        btnDelete.setOnClickListener(this);
+         // referenceAndListener();
+          FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
+          fab.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
+                        .setAction("Action", null).show();
+            }
+        });
+    }
+    //Implementing onclick method because of our class implemented View.onclicllistener interface
+    @Override
+    public void onClick(View v) {
+        switch (v.getId()){
+            case R.id.btnInsert:
+                dm.insert(editName.getText().toString(),editAge.getText().toString());
+                break;
+            case R.id.btnSelect:
+                showData(dm.fetchAll());
+                break;
+            case R.id.btnSearch:
+                showData(dm.searchName(editSearch.getText().toString()));
+                break;
+            case  R.id.btnDelete :
+                dm.delete(editDelete.getText().toString());
+                break;
+
+
+        }
+    }
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        // Inflate the menu; this adds items to the action bar if it is present.
+        getMenuInflater().inflate(R.menu.menu_main, menu);
+        return true;
+    }
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+
+        int id = item.getItemId();
+
+        //noinspection SimplifiableIfStatement
+        if (id == R.id.action_settings) {
+            return true;
+        }
+
+        return super.onOptionsItemSelected(item);
+    }
+    //Creating method to in which all our references  and listener are being called
+    private void referenceAndListener(){
+
+    }
+    // Adding method that returns all the data from the database which is the cursor object
+    public  void showData(Cursor c){
+        while (c.moveToNext()){
+            Log.i(c.getString(1),c.getString(2));
+        }
+    }
+}
+
